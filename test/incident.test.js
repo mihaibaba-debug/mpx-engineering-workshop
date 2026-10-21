@@ -3,10 +3,9 @@ import assert from "node:assert/strict";
 import { getDuplicateListings } from "../src/lib/incident.js";
 import { listJobs } from "../server/catalog.js";
 
-test("incident evidence identifies the seeded duplicate role", () => {
+test("incident evidence reports the catalog duplicate fix as resolved", () => {
   const groups = getDuplicateListings(listJobs());
-  assert.equal(groups.length, 1);
-  assert.deepEqual(groups[0].map((job) => job.source), ["Direct", "Partner feed"]);
+  assert.deepEqual(groups, []);
 });
 
 test("incident evidence resolves when the catalog contains unique roles", () => {

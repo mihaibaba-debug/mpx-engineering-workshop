@@ -20,13 +20,35 @@ test("public catalog and match routes use fictional data", async () => {
     assert.equal(health.data, "synthetic");
 
     const jobs = await (await fetch(`${base}/api/jobs`)).json();
-    assert.equal(jobs.jobs.length, 8);
+    assert.equal(jobs.jobs.length, 7);
 
     const matches = await (await fetch(`${base}/api/matches?candidateId=candidate-001`)).json();
-    assert.equal(matches.jobs.length, 8);
-    assert.equal(matches.jobs[0].match.score, 80);
+    assert.equal(matches.jobs.length, 7);
+    assert.equal(matches.jobs[0].match.score, 90);
+    assert.equal(matches.jobs[0].match.relatedCount, 1);
     assert.equal(JSON.stringify(matches).includes("privateNotes"), false);
   });
+});
+
+test("match rankings stay isolated when requests arrive in either profile order", async () => {
+  for (const order of [
+    ["candidate-001", "candidate-002"],
+    ["candidate-002", "candidate-001"],
+  ]) {
+    await withServer(async (base) => {
+      const responses = [];
+      for (const candidateId of order) {
+        const response = await fetch(`${base}/api/matches?candidateId=${candidateId}`);
+        assert.equal(response.status, 200);
+        responses.push(await response.json());
+      }
+
+      for (const result of responses) {
+        assert.equal(result.scoredForCandidateId, result.candidateId);
+      }
+      assert.notEqual(responses[0].jobs[0].id, responses[1].jobs[0].id);
+    });
+  }
 });
 
 test("public candidate summaries omit recruiter-only fields", async () => {
