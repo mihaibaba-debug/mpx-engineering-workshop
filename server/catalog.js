@@ -1,11 +1,10 @@
 import { primaryJobs, partnerJobs } from "./seed-data.js";
 
 export function listJobs({ query = "", category = "All", location = "All" } = {}) {
-  // Workshop baseline: the same role can appear in both sources.
   const jobs = [...primaryJobs, ...partnerJobs];
   const normalizedQuery = query.trim().toLowerCase();
 
-  return jobs.filter((job) => {
+  const filteredJobs = jobs.filter((job) => {
     const matchesQuery = !normalizedQuery || [
       job.title,
       job.company,
@@ -16,6 +15,16 @@ export function listJobs({ query = "", category = "All", location = "All" } = {}
     const matchesLocation = location === "All" || job.location === location || job.workMode === "Remote";
     return matchesQuery && matchesCategory && matchesLocation;
   });
+
+  const uniqueJobs = new Map();
+  for (const job of filteredJobs) {
+    const existingJob = uniqueJobs.get(job.canonicalId);
+    if (!existingJob || (existingJob.source !== "Direct" && job.source === "Direct")) {
+      uniqueJobs.set(job.canonicalId, job);
+    }
+  }
+
+  return [...uniqueJobs.values()];
 }
 
 export function getJobById(id) {
